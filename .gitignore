@@ -38,6 +38,7 @@ out/
 
 # Secrets and local files
 config.properties
+db.properties
 samples/
 
 # OS junk
