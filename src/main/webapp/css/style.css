@@ -1,0 +1,492 @@
+/* ---------- 1. Variables ---------- */
+:root {
+    /* colors */
+    --bg:               #120d0a;
+    --bg-glow:          #2a1d14;
+    --panel:            #1d1612;
+    --panel-top:        #2a2019;
+    --panel-bottom:     #15100c;
+    --panel-edge:       #3a2c22;
+    --sunken:           #0e0a08;
+    --accent:           #c8a24a;
+    --accent-light:     #f0d58a;
+    --accent-dark:      #8a6d28;
+    --highlight:        #a3262f;
+    --highlight-light:  #d04652;
+    --text:             #efe6d8;
+    --text-dim:         #a89984;
+    --vinyl:            #0b0b0b;
+    --vinyl-sheen:      #2a2a2a;
+    --rim:              #8a5a1f;
+    --rim-light:        #b87a2e;
+
+    /* radius */
+    --radius-sm:        8px;
+    --radius-md:        14px;
+    --radius-lg:        22px;
+    --radius-round:     50%;
+
+    /* gradients */
+    --grad-panel:       linear-gradient(160deg, var(--panel-top), var(--panel-bottom));
+    --grad-brass:       linear-gradient(160deg, var(--accent-light), var(--accent) 45%, var(--accent-dark));
+    --grad-brass-down:  linear-gradient(160deg, var(--accent-dark), var(--accent));
+    --grad-crimson:     linear-gradient(160deg, var(--highlight-light), var(--highlight));
+    --grad-page:        radial-gradient(ellipse at 40% 30%, var(--bg-glow), var(--bg) 70%);
+
+    /* shadow building blocks */
+    --bevel-light:      inset 1px 1px 0 rgba(240, 213, 138, 0.25);
+    --bevel-dark:       inset -1px -2px 4px rgba(0, 0, 0, 0.5);
+    --drop-raised:      2px 3px 6px rgba(0, 0, 0, 0.50), 6px 10px 20px rgba(0, 0, 0, 0.30);
+    --drop-high:        3px 5px 10px rgba(0, 0, 0, 0.55), 10px 18px 36px rgba(0, 0, 0, 0.40);
+    --drop-highest:     6px 10px 18px rgba(0, 0, 0, 0.60), 20px 36px 70px rgba(0, 0, 0, 0.50);
+    --sunk:             inset 2px 3px 8px rgba(0, 0, 0, 0.70), inset -1px -1px 2px rgba(240, 213, 138, 0.08);
+
+    /* ready-made combos */
+    --shadow-panel:     var(--bevel-light), var(--bevel-dark), var(--drop-raised);
+    --shadow-button:    var(--bevel-light), var(--bevel-dark), var(--drop-high);
+    --shadow-card:      var(--bevel-light), var(--bevel-dark), var(--drop-high);
+    --shadow-record:    var(--drop-highest);
+    --shadow-pressed:   var(--sunk);
+
+    /* text */
+    --text-engrave:     0 1px 1px rgba(0, 0, 0, 0.80);
+    --glow-highlight:   0 0 12px rgba(208, 70, 82, 0.45);
+
+    /* sizes */
+    --record-size:      min(42vw, 520px);
+}
+
+/* ---------- 2. Base ---------- */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--grad-page);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    overflow-x: hidden;
+}
+
+/* ---------- 3. Layout ---------- */
+.page {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    padding: 24px;
+    min-height: 100vh;
+}
+
+.left,
+.right {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+/* ---------- 4. Components ---------- */
+.record-wrap {
+    position: relative;
+    width: var(--record-size);
+    aspect-ratio: 1;
+    margin-inline: auto;
+    margin-top: calc(var(--record-size) * -0.4);
+    border-radius: var(--radius-round);
+    box-shadow: var(--shadow-record);
+}
+
+.record-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-round);
+    background: conic-gradient(
+            from 20deg,
+            transparent 0deg,
+            rgba(255, 255, 255, 0.12) 25deg,
+            transparent 60deg,
+            transparent 180deg,
+            rgba(255, 255, 255, 0.08) 205deg,
+            transparent 240deg
+    );
+    pointer-events: none;
+}
+
+.record {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-round);
+    border: 14px solid var(--rim);
+    background: repeating-radial-gradient(
+            circle at center,
+            var(--vinyl) 0,
+            var(--vinyl) 2px,
+            var(--vinyl-sheen) 3px,
+            var(--vinyl) 4px
+    );
+    box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.85);
+    animation: spin 4s linear infinite;
+    animation-play-state: paused;
+    will-change: transform;
+}
+
+.record.playing {
+    animation-play-state: running;
+}
+
+.record-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 38%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: var(--radius-round);
+    background-color: var(--accent-dark);
+    background-image: var(--cover);
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 0 4px var(--vinyl), inset 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+/* spindle hole */
+.record-label::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 9%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: var(--radius-round);
+    background: var(--bg);
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.8), 0 0 0 2px var(--panel-edge);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+.tonearm {
+    --base: calc(var(--record-size) * 0.13);
+    --arm-t: calc(var(--record-size) * 0.022);
+    position: absolute;
+    left: calc(108% - var(--base) / 2);
+    top: calc(34% - var(--base) / 2);
+    width: var(--base);
+    aspect-ratio: 1;
+    z-index: 3;
+    border-radius: var(--radius-round);
+    background: radial-gradient(circle at 35% 30%, var(--accent-light), var(--accent) 45%, var(--accent-dark));
+    box-shadow: var(--bevel-dark);
+    pointer-events: none;
+    filter: drop-shadow(3px 5px 4px rgba(0, 0, 0, 0.55));
+}
+
+/* dark screw cap in the middle of the pivot */
+.tonearm::before {
+    content: "";
+    position: absolute;
+    inset: 32%;
+    z-index: 2;
+    border-radius: var(--radius-round);
+    background: radial-gradient(circle at 35% 30%, var(--panel-edge), var(--sunken));
+    box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.8), 0 0 0 2px var(--accent-dark);
+}
+
+.tonearm-arm {
+    position: absolute;
+    top: calc(50% - var(--arm-t) / 2);
+    right: 50%;
+    z-index: 1;
+    width: calc(var(--record-size) * 0.45);
+    height: var(--arm-t);
+    border-radius: var(--arm-t);
+    background: linear-gradient(to bottom, var(--accent-light), var(--accent) 45%, var(--accent-dark));
+    transform-origin: 100% 50%;
+    transform: rotate(-90deg);
+    transition: transform 0.8s linear;
+}
+
+.record.playing ~ .tonearm .tonearm-arm {
+    transform: rotate(calc(-60deg + var(--progress, 0) * 22deg));
+}
+
+/* cartridge at the tip of the arm */
+.tonearm-head {
+    position: absolute;
+    left: calc(var(--record-size) * -0.07);
+    top: 50%;
+    width: calc(var(--record-size) * 0.1);
+    height: calc(var(--record-size) * 0.045);
+    margin-top: calc(var(--record-size) * -0.0225);
+    border-radius: var(--radius-sm);
+    background: linear-gradient(to bottom, var(--panel-edge), var(--sunken));
+    box-shadow: inset 0 0 0 1px var(--accent-dark), var(--bevel-light);
+}
+
+.now-playing {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    text-shadow: var(--text-engrave);
+}
+
+#nowPlaying {
+    color: var(--text);
+    font-weight: bold;
+}
+
+
+.seek {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px;
+}
+
+.seek span {
+    min-width: 42px;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+    text-shadow: var(--text-engrave);
+    text-align: center;
+}
+
+#seekBar {
+    --fill: 0%;
+    flex: 1;
+    height: 28px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+#seekBar::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 10px;
+    background: linear-gradient(to right, var(--accent) var(--fill), var(--sunken) var(--fill));
+    box-shadow: var(--sunk);
+}
+#seekBar::-moz-range-track {
+    height: 10px;
+    border-radius: 10px;
+    background: linear-gradient(to right, var(--accent) var(--fill), var(--sunken) var(--fill));
+    box-shadow: var(--sunk);
+}
+
+
+#seekBar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    margin-top: -6px;
+    border: none;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--accent-light), var(--accent) 50%, var(--accent-dark));
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.6), inset -1px -1px 2px rgba(0, 0, 0, 0.35);
+}
+#seekBar::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--accent-light), var(--accent) 50%, var(--accent-dark));
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.6), inset -1px -1px 2px rgba(0, 0, 0, 0.35);
+}
+
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+}
+
+.controls button {
+    min-height: 48px;
+    padding: 0 24px;
+    border: none;
+    border-radius: var(--radius-lg);
+    background: var(--grad-brass);
+    box-shadow: var(--shadow-button);
+    color: var(--bg);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: bold;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    transition: transform 0.08s, filter 0.15s;
+}
+
+#playBtn {
+    min-width: 110px;
+}
+
+.controls button:hover {
+    filter: brightness(1.08);
+}
+
+.controls button:active {
+    transform: translateY(2px);
+    background: var(--grad-brass-down);
+    box-shadow: var(--shadow-pressed);
+}
+
+.lyrics-box {
+    flex: 1;
+    min-height: 28vh;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--sunken);
+    box-shadow: var(--sunk);
+    color: var(--text-dim);
+    overflow-y: auto;
+}
+
+.album-card {
+    position: relative;
+    width: min(100%, 38vh);
+    aspect-ratio: 1;
+    margin-inline: auto;
+    padding: 10px;
+    border-radius: var(--radius-lg);
+    background: var(--grad-panel);
+    box-shadow: var(--shadow-card);
+}
+
+.album-art {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-md);
+    background-color: var(--sunken);
+    background-image: var(--cover);
+    background-size: cover;
+    background-position: center;
+    box-shadow: var(--drop-raised);
+    overflow: hidden;
+}
+
+.album-art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.22) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
+            transparent 50%
+    );
+    pointer-events: none;
+}
+
+.album-info {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 36px 12px 12px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.88), transparent);
+    text-align: center;
+}
+
+.album-info h1 {
+    margin: 0;
+    font-size: 1.3rem;
+    text-shadow: var(--text-engrave);
+}
+
+.album-info h2 {
+    margin: 2px 0 0;
+    font-size: 0.95rem;
+    font-weight: normal;
+    color: var(--text);
+    opacity: 0.85;
+}
+
+/* ----- Tracklist ----- */
+.tracklist-box {
+    flex: 1;
+    display: flex;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    background: var(--grad-panel);
+    box-shadow: var(--shadow-panel);
+}
+
+#tracklist {
+    flex: 1;
+    display: grid;
+    grid-auto-rows: minmax(44px, 1fr);
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#tracklist li {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-radius: var(--radius-sm);
+    background: var(--sunken);
+    box-shadow: var(--sunk);
+    line-height: 1.2;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+#tracklist li:hover {
+    filter: brightness(1.3);
+}
+
+#tracklist li.active {
+    background: var(--grad-crimson);
+    box-shadow: var(--bevel-light), var(--bevel-dark), var(--glow-highlight);
+    text-shadow: var(--text-engrave);
+}
+
+/* ---------- 5. Phone layout: KEEP AT THE VERY END ---------- */
+@media (max-width: 700px) {
+
+    :root {
+        --record-size: min(78vw, 420px);
+    }
+
+    .page {
+        grid-template-columns: 1fr;
+        align-content: start;
+        gap: 16px;
+        padding: 12px;
+    }
+
+    .left,
+    .right {
+        display: contents;
+    }
+
+    .record-wrap {
+        margin-top: calc(var(--record-size) * -0.25);
+    }
+
+    .record-wrap    { order: 1; }
+    .now-playing    { order: 2; }
+    .seek           { order: 3; }
+    .controls       { order: 4; }
+    .tracklist-box  { order: 5; }
+    .lyrics-box     { order: 6; }
+    .album-card     { order: 7; }
+
+    .tracklist-box {
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+}

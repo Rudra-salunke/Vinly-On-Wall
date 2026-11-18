@@ -4,6 +4,7 @@ const prevBtn    = document.getElementById("prevBtn");
 const nextBtn    = document.getElementById("nextBtn");
 const nowPlaying = document.getElementById("nowPlaying");
 const items      = document.querySelectorAll("#tracklist li");
+const record = document.querySelector(".record");
 
 // ---------- 2. Build the queue from the <li> items ----------
 // Each entry: { id: "5", title: "Dogs" }
@@ -29,15 +30,11 @@ function togglePlay() {
     }else{
         audio.pause();
     }
-
-    // TIP: audio.play() returns a promise, add .catch(() => {}) to avoid console errors
 }
 
 // ---------- 5. Next and previous (with wrap-around) ----------
 function playNext() {
-    // TODO: new index = (currentIndex + 1) % queue.length
     currentIndex=(currentIndex+1)%queue.length;
-    // TODO: loadTrack(newIndex), then audio.play()
     loadTrack(currentIndex);
     audio.play().catch(()=>{});
 }
@@ -49,8 +46,8 @@ function playPrev() {
 }
 
 // ---------- 6. Keep the Play/Pause button text correct ----------
-audio.addEventListener("play",  () => {playBtn.textContent = "Pause" });
-audio.addEventListener("pause", () => {playBtn.textContent = "Play"   });
+audio.addEventListener("play",  () => { playBtn.textContent = "Pause"; record.classList.add("playing"); });
+audio.addEventListener("pause", () => { playBtn.textContent = "Play";  record.classList.remove("playing"); });
 
 // ---------- 7. Auto-advance when a song ends ----------
 audio.addEventListener("ended", playNext);
@@ -70,3 +67,66 @@ items.forEach((li, index) => {
 if (queue.length > 0) {
     loadTrack(0);
 }
+const seekBar    = document.getElementById("seekBar");
+const timeNow    = document.getElementById("timeNow");
+const timeTotal  = document.getElementById("timeTotal");
+const recordWrap = document.querySelector(".record-wrap");
+
+let dragging = false;
+
+
+function fmt(sec) {
+    if (!isFinite(sec)) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return m + ":" + String(s).padStart(2, "0");
+}
+
+
+function showProgress(p) {
+    const pct = Math.min(Math.max(p, 0), 1);
+    seekBar.value = pct * 1000;
+    seekBar.style.setProperty("--fill", (pct * 100) + "%");
+    recordWrap.style.setProperty("--progress", pct);
+}
+
+
+audio.addEventListener("timeupdate", () => {
+    if (dragging || !isFinite(audio.duration) || audio.duration === 0) return;
+    showProgress(audio.currentTime / audio.duration);
+    timeNow.textContent = fmt(audio.currentTime);
+});
+
+
+audio.addEventListener("loadedmetadata", () => {
+    timeTotal.textContent = fmt(audio.duration);
+});
+
+
+audio.addEventListener("loadstart", () => {
+    showProgress(0);
+    timeNow.textContent = "0:00";
+    timeTotal.textContent = "0:00";
+});
+
+
+seekBar.addEventListener("input", () => {
+    dragging = true;
+    const p = seekBar.value / 1000;
+    seekBar.style.setProperty("--fill", (p * 100) + "%");
+    recordWrap.style.setProperty("--progress", p);
+    if (isFinite(audio.duration)) timeNow.textContent = fmt(p * audio.duration);
+});
+
+
+seekBar.addEventListener("change", () => {
+    if (isFinite(audio.duration)) {
+        audio.currentTime = (seekBar.value / 1000) * audio.duration;
+    }
+    dragging = false;
+});
+
+
+seekBar.addEventListener("pointerup", () => {
+    setTimeout(() => { dragging = false; }, 50);
+});

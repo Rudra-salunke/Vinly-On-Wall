@@ -7,40 +7,87 @@
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<html>
-  <head>
-    <title></title>
-  </head>
-  <style>
-  .active { font-weight: bold; }
-  </style>
-  <body>
-  <h1><c:out value="${album.title}"/></h1>
-  <h2><c:out value="${album.artist}"/></h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><c:out value="${album.title}"/></title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 
-  <c:if test="${not empty album.coverBase64}">
-    <img src="data:${album.coverType};base64,${album.coverBase64}"
-         alt="<c:out value='${album.title}'/>" width="300">
-  </c:if>
+<%-- The cover is printed ONCE here as a CSS variable (--cover).
+     The record label and the album card both use var(--cover) in style.css.
+     If the album has no cover, the variable is simply not set. --%>
+<div class="page"
+     <c:if test="${not empty album.coverBase64}">
+       style="--cover: url('data:${album.coverType};base64,${album.coverBase64}')"
+     </c:if>
+>
 
-  <p>Now playing: <span id="nowPlaying"></span></p>
+  <!-- ================= LEFT COLUMN ================= -->
+  <div class="left">
 
-  <audio id="player"></audio>
+    <div class="record-wrap">
+      <div class="record">
+        <div class="record-label"></div>
+      </div>
+      <div class="tonearm">
+        <div class="tonearm-arm">
+          <div class="tonearm-head"></div>
+        </div>
+      </div>
+    </div>
 
-  <div>
-    <button id="prevBtn">Previous</button>
-    <button id="playBtn">Play</button>
-    <button id="nextBtn">Next</button>
+    <div class="now-playing">
+      Now playing: <span id="nowPlaying"></span>
+    </div>
+
+    <span id="timeNow">0:00</span>
+    <input type="range" id="seekBar" min="0" max="1000" value="0" step="1" aria-label="Seek">
+    <span id="timeTotal">0:00</span>
+
+    <div class="controls">
+      <button id="prevBtn">Previous</button>
+      <button id="playBtn">Play</button>
+      <button id="nextBtn">Next</button>
+    </div>
+
+    <div class="lyrics-box">
+      <%-- TODO later (feat): lyrics --%>
+    </div>
+
   </div>
 
-  <ul id="tracklist">
-    <c:forEach var="t" items="${tracks}">
-      <li data-id="${t.id}" data-title="<c:out value='${t.title}'/>">
-        <c:out value="${t.trackNumber}"/>. <c:out value="${t.title}"/>
-      </li>
-    </c:forEach>
-  </ul>
+  <!-- ================= RIGHT COLUMN ================= -->
+  <div class="right">
 
-  <script src="js/script.js"></script>
-  </body>
+    <div class="album-card">
+      <div class="album-art"></div>
+      <div class="album-info">
+        <h1><c:out value="${album.title}"/></h1>
+        <h2><c:out value="${album.artist}"/></h2>
+      </div>
+    </div>
+
+    <div class="tracklist-box">
+      <%-- TODO later: add a class by track count (cols-1 / cols-2 / cols-3) --%>
+      <ul id="tracklist">
+        <c:forEach var="t" items="${tracks}">
+          <li data-id="${t.id}" data-title="<c:out value='${t.title}'/>">
+            <c:out value="${t.trackNumber}"/>. <c:out value="${t.title}"/>
+          </li>
+        </c:forEach>
+      </ul>
+    </div>
+
+  </div>
+
+</div>
+
+<audio id="player"></audio>
+<script src="js/script.js"></script>
+</body>
 </html>
+
