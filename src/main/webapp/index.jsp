@@ -7,6 +7,7 @@
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,7 +27,7 @@
      </c:if>
 >
 
-  <!-- ================= LEFT COLUMN ================= -->
+  <!-- ******************* LEFT COLUMN ******************* -->
   <div class="left">
 
     <div class="record-wrap">
@@ -43,11 +44,11 @@
     <div class="now-playing">
       Now playing: <span id="nowPlaying"></span>
     </div>
-
+    <div class="seek">
     <span id="timeNow">0:00</span>
     <input type="range" id="seekBar" min="0" max="1000" value="0" step="1" aria-label="Seek">
     <span id="timeTotal">0:00</span>
-
+    </div>
     <div class="controls">
       <button id="prevBtn">Previous</button>
       <button id="playBtn">Play</button>
@@ -60,7 +61,7 @@
 
   </div>
 
-  <!-- ================= RIGHT COLUMN ================= -->
+  <!-- ******************* RIGHT COLUMN ******************* -->
   <div class="right">
 
     <div class="album-card">
@@ -73,7 +74,19 @@
 
     <div class="tracklist-box">
       <%-- TODO later: add a class by track count (cols-1 / cols-2 / cols-3) --%>
-      <ul id="tracklist">
+      <c:set var="trackCount" value="${fn:length(tracks)}" />
+      <c:choose>
+          <c:when test="${trackCount <= 7}">
+              <c:set var="gridClass" value="cols-1" />
+          </c:when>
+          <c:when test="${trackCount <= 16}">
+              <c:set var="gridClass" value="cols-2" />
+          </c:when>
+          <c:otherwise>
+              <c:set var="gridClass" value="cols-3" />
+          </c:otherwise>
+      </c:choose>
+      <ul id=tracklist class="track-list ${gridClass}">
         <c:forEach var="t" items="${tracks}">
           <li data-id="${t.id}" data-title="<c:out value='${t.title}'/>">
             <c:out value="${t.trackNumber}"/>. <c:out value="${t.title}"/>
@@ -81,9 +94,7 @@
         </c:forEach>
       </ul>
     </div>
-
   </div>
-
 </div>
 
 <audio id="player"></audio>

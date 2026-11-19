@@ -153,8 +153,6 @@ body {
     background-position: center;
     box-shadow: 0 0 0 4px var(--vinyl), inset 0 0 8px rgba(0, 0, 0, 0.6);
 }
-
-/* spindle hole */
 .record-label::after {
     content: "";
     position: absolute;
@@ -188,7 +186,6 @@ body {
     filter: drop-shadow(3px 5px 4px rgba(0, 0, 0, 0.55));
 }
 
-/* dark screw cap in the middle of the pivot */
 .tonearm::before {
     content: "";
     position: absolute;
@@ -352,7 +349,7 @@ body {
 
 .album-card {
     position: relative;
-    width: min(100%, 38vh);
+    width: min(100%, 44vh);
     aspect-ratio: 1;
     margin-inline: auto;
     padding: 10px;
@@ -421,21 +418,20 @@ body {
     background: var(--grad-panel);
     box-shadow: var(--shadow-panel);
 }
-
 #tracklist {
     flex: 1;
-    display: grid;
-    grid-auto-rows: minmax(44px, 1fr);
-    gap: 10px;
+    column-gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
 }
-
 #tracklist li {
     display: flex;
     align-items: center;
+    break-inside: avoid;
     padding: 0 16px;
+    margin-bottom: 5px;
+    min-height: 48px;
     border-radius: var(--radius-sm);
     background: var(--sunken);
     box-shadow: var(--sunk);
@@ -443,6 +439,9 @@ body {
     cursor: pointer;
     transition: filter 0.15s;
 }
+.cols-1 { column-count: 1; }
+.cols-2 { column-count: 2; }
+.cols-3 { column-count: 3; }
 
 #tracklist li:hover {
     filter: brightness(1.3);
@@ -481,12 +480,17 @@ body {
     .now-playing    { order: 2; }
     .seek           { order: 3; }
     .controls       { order: 4; }
-    .tracklist-box  { order: 5; }
-    .lyrics-box     { order: 6; }
-    .album-card     { order: 7; }
+    .tracklist-box  {
+        order: 7;
+        display: block;
+    }
+    .lyrics-box     { order: 5; }
+    .album-card     { order: 6; }
 
     .tracklist-box {
         max-height: 40vh;
         overflow-y: auto;
     }
+    .cols-3 { column-count: 2; }
+
 }
