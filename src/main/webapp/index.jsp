@@ -86,7 +86,7 @@
               <c:set var="gridClass" value="cols-3" />
           </c:otherwise>
       </c:choose>
-      <ul id=tracklist class="track-list ${gridClass}">
+      <ul id=tracklist class="track-list ${gridClass}" data-token="<c:out value='${token}'/>">
         <c:forEach var="t" items="${tracks}">
           <li data-id="${t.id}" data-title="<c:out value='${t.title}'/>">
             <c:out value="${t.trackNumber}"/>. <c:out value="${t.title}"/>

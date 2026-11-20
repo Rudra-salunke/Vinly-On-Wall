@@ -5,6 +5,8 @@ const nextBtn    = document.getElementById("nextBtn");
 const nowPlaying = document.getElementById("nowPlaying");
 const items      = document.querySelectorAll("#tracklist li");
 const record = document.querySelector(".record");
+const tracklist = document.getElementById('tracklist');
+const token = tracklist.dataset.token;
 
 // ---------- 2. Build the queue from the <li> items ----------
 // Each entry: { id: "5", title: "Dogs" }
@@ -18,9 +20,14 @@ let currentIndex = 0;
 // ---------- 3. Load a track (does NOT start playing) ----------
 function loadTrack(i) {
     currentIndex = i;
-    audio.src = "audio?id=" + queue[i].id;
+    audio.src = 'audio?id=' + queue[i].id + '&token=' + encodeURIComponent(token);
     nowPlaying.textContent = queue[i].title;
-    items.forEach((li, idx) => li.classList.toggle("active", idx === i));
+    items.forEach((li, index) => {
+        li.addEventListener("click", () => {
+            loadTrack(index);
+            audio.play().catch(() => {});
+        });
+    });
 }
 
 // ---------- 4. Play and pause ----------

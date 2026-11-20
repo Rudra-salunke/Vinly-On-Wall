@@ -20,8 +20,7 @@ public class AlbumDAO {
             ps.setInt(1,id);
             try(ResultSet rs= ps.executeQuery()){
                 if (rs.next()){
-                    Album a=new Album(rs.getInt(1),rs.getString(2),rs.getString(3),rs.getInt(4),rs.getString(5),rs.getBytes(6));
-                    return a;
+                    return new Album(rs.getInt(1),rs.getString(2),rs.getString(3),rs.getInt(4),rs.getString(5),rs.getBytes(6));
                 }
                 else{
                     return null;
@@ -57,6 +56,48 @@ public class AlbumDAO {
             PreparedStatement ps=con.prepareStatement(sql);
         ){
             ps.setInt(1,trackId);
+            try(ResultSet rs= ps.executeQuery()) {
+                if(rs.next()) {
+                    return new Track(
+                            rs.getInt("id"),
+                            rs.getInt("album_id"),
+                            rs.getInt("track_number"),
+                            rs.getString("title"),
+                            rs.getString("audio_type"),
+                            rs.getBytes("audio_data")
+                    );
+                }else{
+                    return null;
+                }
+            }
+        }
+    }
+    public Album getAlbumByToken(String token) throws SQLException, ClassNotFoundException{
+        String sql="SELECT id, title, artist, release_year, cover_type, cover_data FROM albums WHERE token = ?";
+        try(Connection con= DBConnection.getConnection();
+            PreparedStatement ps=con.prepareStatement(sql);
+        ){
+            ps.setString(1,token);
+            try(ResultSet rs= ps.executeQuery()){
+                if (rs.next()){
+                    return new Album(rs.getInt(1),rs.getString(2),rs.getString(3),rs.getInt(4),rs.getString(5),rs.getBytes(6));
+                }
+                else{
+                    return null;
+                }
+            }
+        }
+    }
+    public Track getTrackWithAudioForToken(int trackId,String token)throws SQLException, ClassNotFoundException{
+        String sql="SELECT t.id, t.album_id, t.track_number, t.title, t.audio_type, t.audio_data\n" +
+                "FROM tracks t\n" +
+                "JOIN albums a ON a.id = t.album_id\n" +
+                "WHERE t.id = ? AND a.token = ?";
+        try(Connection con= DBConnection.getConnection();
+            PreparedStatement ps=con.prepareStatement(sql);
+        ){
+            ps.setInt(1,trackId);
+            ps.setString(2,token);
             try(ResultSet rs= ps.executeQuery()) {
                 if(rs.next()) {
                     return new Track(
