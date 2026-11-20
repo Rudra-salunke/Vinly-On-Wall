@@ -6,29 +6,18 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
 
-/**
- * ONE-TIME LOADER. Run its main() from IntelliJ; it is not part of the web app.
- *
- * Expects a folder like:
- *   C:\vinyl-media\animals\
- *       cover.jpg   (or cover.png)
- *       01-Pigs On The Wing (Part 1).mp3
- *       02-Dogs.mp3
- *       ...
- *
- * File name pattern for tracks:  NN-Title.mp3
- * Re-running it is safe: it replaces the tracks of the album each time.
- */
 public class MediaLoader {
 
     // ===== EDIT THESE =====
-    private static final String MEDIA_FOLDER = "C:\\vinyl-media\\RubberSoul";
-    private static final int    ALBUM_ID     = 2;
-    private static final String ALBUM_TITLE  = "RubberSoul";
-    private static final String ALBUM_ARTIST = "Beatles";
-    private static final int    ALBUM_YEAR   = 1965;
+    private static final String MEDIA_FOLDER = "C:\\vinyl-media\\animals";
+    private static final int    ALBUM_ID     = 1;
+    private static final String ALBUM_TITLE  = "Animals";
+    private static final String ALBUM_ARTIST = "Pink Floyd";
+    private static final int    ALBUM_YEAR   = 1977;
 
     public static void main(String[] args) throws Exception {
         File folder = new File(MEDIA_FOLDER);
@@ -56,9 +45,10 @@ public class MediaLoader {
                 for (File mp3 : mp3s) {
                     insertTrack(con, mp3);
                 }
-
+                String token=ensureToken(ALBUM_ID,con);
                 con.commit();
                 System.out.println("Done. Loaded " + mp3s.length + " tracks.");
+                System.out.println("The token for this album is /player?token="+token);
             } catch (Exception e) {
                 con.rollback();
                 System.out.println("FAILED, nothing was saved. Reason: " + e.getMessage());
@@ -101,8 +91,8 @@ public class MediaLoader {
                 return;
             }
         }
-        String insert = "INSERT INTO albums (id, title, artist, release_year, cover_type, cover_data) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
+        String insert = "INSERT INTO albums (id, title, artist, release_year, cover_type, cover_data,token) "
+                + "VALUES (?, ?, ?, ?, ?, ?,?)";
         try (PreparedStatement ps = con.prepareStatement(insert)) {
             ps.setInt(1, ALBUM_ID);
             ps.setString(2, ALBUM_TITLE);
@@ -110,6 +100,7 @@ public class MediaLoader {
             ps.setInt(4, ALBUM_YEAR);
             ps.setString(5, coverType);
             ps.setBytes(6, coverBytes);
+            ps.setString(7,TokenGenerator.generateToken());
             ps.executeUpdate();
             System.out.println("Created album " + ALBUM_ID + ": " + ALBUM_TITLE);
         }
@@ -150,6 +141,24 @@ public class MediaLoader {
 
             System.out.println("Inserted track " + trackNumber + ": " + title
                     + " (" + (mp3.length() / 1024) + " KB)");
+        }
+    }
+    private static String ensureToken(int id,Connection con) throws Exception{
+        String SQL="UPDATE albums SET token = ? WHERE id = ? AND (token IS NULL OR token = '')";
+        try (PreparedStatement ps = con.prepareStatement(SQL)){
+            ps.setString(1,TokenGenerator.generateToken());
+            ps.setInt(2,id);
+            ps.executeUpdate();
+        }
+        String getSql = "SELECT token FROM albums WHERE id = ?";
+        try (PreparedStatement ps = con.prepareStatement(getSql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("token");
+                }
+                throw new SQLException("Album " + id + " not found while reading token");
+            }
         }
     }
 }
