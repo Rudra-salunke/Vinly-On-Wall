@@ -6,16 +6,17 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import model.Track;
+import model.TrackAudioInfo;
 import util.TokenValidator;
+import util.TrackCache;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 @WebServlet("/audio")
 public class AudioServlet extends HttpServlet {
+    private static final TrackCache CACHE = new TrackCache(150L * 1024 * 1024);
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException, ServletException {
@@ -41,18 +42,29 @@ public class AudioServlet extends HttpServlet {
             return;
         }
 
-        Track track;
+        TrackAudioInfo info;
+        byte[] data;
         try {
-            track = new AlbumDAO().getTrackWithAudioForToken(trackId, token);
+            AlbumDAO dao = new AlbumDAO();
+            info = dao.getTrackInfoForToken(trackId, token);
+            if (info == null) {
+                res.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
+                return;
+            }
+            data = CACHE.get(trackId);
+            if (data == null) {
+                data = dao.getAudioBytes(trackId);
+                if (data != null) {
+                    CACHE.put(trackId, data);
+                }
+            }
         } catch (SQLException | ClassNotFoundException e) {
             throw new ServletException("Database error", e);
         }
-        if (track == null) {
+        if (data == null) {
             res.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found");
             return;
         }
-
-        byte[] data = track.getAudioData();
         int total = data.length;
         int start = 0;
         int end = total - 1;
@@ -88,7 +100,7 @@ public class AudioServlet extends HttpServlet {
         }
         int length = end - start + 1;
 
-        res.setContentType(track.getAudioType());
+        res.setContentType(info.getAudioType());
         res.setHeader("Accept-Ranges", "bytes");
         res.setContentLength(length);
         if (isRange) {
