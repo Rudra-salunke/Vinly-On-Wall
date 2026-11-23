@@ -2,12 +2,11 @@ package util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
 
 public class MediaLoader {
@@ -126,21 +125,27 @@ public class MediaLoader {
 
         int trackNumber = Integer.parseInt(name.substring(0, dash).trim());
         String title = name.substring(dash + 1).trim();
-
-        String sql = "INSERT INTO tracks (album_id, track_number, title, audio_type, audio_data) "
-                + "VALUES (?, ?, ?, ?, ?)";
+        String lyrics = readLyrics(mp3);
+        String sql = "INSERT INTO tracks (album_id, track_number, title, audio_type, audio_data,lyrics) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql);
-             InputStream in = new FileInputStream(mp3)) {
+             InputStream in = new FileInputStream(mp3)){
 
             ps.setInt(1, ALBUM_ID);
             ps.setInt(2, trackNumber);
             ps.setString(3, title);
             ps.setString(4, "audio/mpeg");
             ps.setBinaryStream(5, in, mp3.length());
+            if (lyrics != null) {
+                ps.setString(6, lyrics);
+            } else {
+                ps.setNull(6, Types.LONGVARCHAR);
+            }
             ps.executeUpdate();
 
             System.out.println("Inserted track " + trackNumber + ": " + title
-                    + " (" + (mp3.length() / 1024) + " KB)");
+                    + " (" + (mp3.length() / 1024) + " KB), lyrics: "
+                    + (lyrics != null ? "yes (" + lyrics.length() + " chars)" : "none"));
         }
     }
     private static String ensureToken(int id,Connection con) throws Exception{
@@ -159,6 +164,37 @@ public class MediaLoader {
                 }
                 throw new SQLException("Album " + id + " not found while reading token");
             }
+        }
+    }
+    private static final int MAX_LYRICS_BYTES = 60_000;
+
+    private static String readLyrics(File mp3) {
+        String mp3Name = mp3.getName();
+        String txtName = mp3Name.substring(0, mp3Name.length() - 4) + ".txt";
+        File txt = new File(mp3.getParentFile(), txtName);
+
+        if (!txt.isFile()) {
+            return null;
+        }
+        try {
+            String text = Files.readString(txt.toPath(), StandardCharsets.UTF_8);
+            if (text.startsWith("\uFEFF")) {
+                text = text.substring(1);
+            }
+            text = text.replace("\r\n", "\n").trim();
+            if (text.isEmpty()) {
+                return null;
+            }
+            // TODO 6: if it is longer than MAX_LYRICS_BYTES in UTF-8 bytes,
+            if (text.getBytes(StandardCharsets.UTF_8).length>MAX_LYRICS_BYTES){
+                System.out.println("WARNING: " + txtName + " is " + text.getBytes(StandardCharsets.UTF_8).length
+                        + " bytes, close to the TEXT column limit (65535).");
+            }
+            return text;
+        } catch (IOException e) {
+            System.out.println("WARNING: could not read " + txtName + " (" + e.getMessage()
+                    + "). Storing no lyrics for this track.");
+            return null;
         }
     }
 }
