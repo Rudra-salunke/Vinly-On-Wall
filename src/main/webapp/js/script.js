@@ -26,9 +26,24 @@ function loadTrack(i) {
     currentIndex = i;
     audio.src = 'audio?id=' + queue[i].id + '&token=' + encodeURIComponent(token);
     nowPlaying.textContent = queue[i].title;
+    setMediaMetadata(queue[i].title);
     showLyrics(queue[i].id);
     items.forEach((li, idx) => li.classList.toggle("active", idx === i));
 }
+
+function setMediaMetadata(title) {
+    if (!("mediaSession" in navigator)) return;
+
+    const album =document.querySelector('.album-info h1').textContent.trim();
+    const artist = document.querySelector('.album-info h2').textContent.trim();
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+        title: title,
+        artist: artist,
+        album: album
+    });
+}
+
 // ---------- 4. Play and pause ----------
 function togglePlay() {
     if (audio.paused){
@@ -52,8 +67,23 @@ function playPrev() {
 }
 
 // ---------- 6. Keep the Play/Pause button text correct ----------
-audio.addEventListener("play",  () => { playBtn.textContent = "Pause"; record.classList.add("playing"); });
-audio.addEventListener("pause", () => { playBtn.textContent = "Play";  record.classList.remove("playing"); });
+audio.addEventListener("play", () => {
+    playBtn.textContent = "Pause";
+    record.classList.add("playing");
+    // TODO: if mediaSession exists, set playbackState to "playing"
+    if("mediaSession" in navigator){
+        navigator.mediaSession.playbackState = "playing";
+    }
+});
+
+audio.addEventListener("pause", () => {
+    playBtn.textContent = "Play";
+    record.classList.remove("playing");
+    // TODO: if mediaSession exists, set playbackState to "paused"
+    if("mediaSession" in navigator){
+        navigator.mediaSession.playbackState = "paused";
+    }
+});
 
 // ---------- 7. Auto-advance when a song ends ----------
 audio.addEventListener("ended", playNext);
@@ -62,6 +92,12 @@ audio.addEventListener("ended", playNext);
 playBtn.addEventListener("click", togglePlay);
 nextBtn.addEventListener("click", playNext);
 prevBtn.addEventListener("click", playPrev);
+if ("mediaSession" in navigator) {
+    navigator.mediaSession.setActionHandler("play",          () =>audio.play());
+    navigator.mediaSession.setActionHandler("pause",         () =>audio.pause());
+    navigator.mediaSession.setActionHandler("nexttrack",   playNext);
+    navigator.mediaSession.setActionHandler("previoustrack", playPrev);
+}
 
 // ---------- 9. Tap a track in the list ----------
 items.forEach((li, index) => {
