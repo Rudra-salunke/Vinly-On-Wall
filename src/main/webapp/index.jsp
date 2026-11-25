@@ -55,10 +55,7 @@
       <button id="nextBtn">Next</button>
     </div>
 
-    <div class="lyrics-box">
-      <%-- TODO later (feat): lyrics --%>
-    </div>
-
+    <div class="lyrics-box" id="lyricsBox"> </div>
   </div>
 
   <!-- ******************* RIGHT COLUMN ******************* -->
@@ -73,7 +70,6 @@
     </div>
 
     <div class="tracklist-box">
-      <%-- TODO later: add a class by track count (cols-1 / cols-2 / cols-3) --%>
       <c:set var="trackCount" value="${fn:length(tracks)}" />
       <c:choose>
           <c:when test="${trackCount <= 7}">
@@ -86,7 +82,7 @@
               <c:set var="gridClass" value="cols-3" />
           </c:otherwise>
       </c:choose>
-      <ul id=tracklist class="track-list ${gridClass}" data-token="<c:out value='${token}'/>">
+      <ul id="tracklist" class="track-list ${gridClass}" data-token="<c:out value='${token}'/>">
         <c:forEach var="t" items="${tracks}">
           <li data-id="${t.id}" data-title="<c:out value='${t.title}'/>">
             <c:out value="${t.trackNumber}"/>. <c:out value="${t.title}"/>
@@ -96,7 +92,12 @@
     </div>
   </div>
 </div>
-
+<div id="lyricsStore" hidden>
+  <c:forEach var="t" items="${tracks}">
+    <div id="lyrics-${t.id}"><c:out value="${t.lyrics}"/></div>
+    <div id="lrc-${t.id}"><c:out value="${t.lyricsLrc}"/></div>
+  </c:forEach>
+</div>
 <audio id="player"></audio>
 <script src="js/script.js"></script>
 </body>

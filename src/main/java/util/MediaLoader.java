@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.*;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 public class MediaLoader {
 
@@ -126,26 +127,35 @@ public class MediaLoader {
         int trackNumber = Integer.parseInt(name.substring(0, dash).trim());
         String title = name.substring(dash + 1).trim();
         String lyrics = readLyrics(mp3);
-        String sql = "INSERT INTO tracks (album_id, track_number, title, audio_type, audio_data,lyrics) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
+        String lrc = readLrc(mp3);
+
+        String sql = "INSERT INTO tracks "
+                + "(album_id, track_number, title, audio_type, audio_data, lyrics, lyrics_lrc) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql);
-             InputStream in = new FileInputStream(mp3)){
+             InputStream in = new FileInputStream(mp3)) {
 
             ps.setInt(1, ALBUM_ID);
             ps.setInt(2, trackNumber);
             ps.setString(3, title);
             ps.setString(4, "audio/mpeg");
             ps.setBinaryStream(5, in, mp3.length());
-            if (lyrics != null) {
+            if (lyrics != null){
                 ps.setString(6, lyrics);
-            } else {
+            } else{
                 ps.setNull(6, Types.LONGVARCHAR);
+            }
+            if (lrc != null){
+                ps.setString(7, lrc);
+            } else {
+                ps.setNull(7, Types.LONGVARCHAR);
             }
             ps.executeUpdate();
 
             System.out.println("Inserted track " + trackNumber + ": " + title
                     + " (" + (mp3.length() / 1024) + " KB), lyrics: "
-                    + (lyrics != null ? "yes (" + lyrics.length() + " chars)" : "none"));
+                    + (lyrics != null ? lyrics.length() + " chars" : "none")
+                    + ", synced: " + (lrc != null ? lrc.length() + " chars" : "none"));
         }
     }
     private static String ensureToken(int id,Connection con) throws Exception{
@@ -167,34 +177,73 @@ public class MediaLoader {
         }
     }
     private static final int MAX_LYRICS_BYTES = 60_000;
+    private static final Pattern LRC_LINE = Pattern.compile("^\\[\\d{1,3}:\\d{2}([.:]\\d{1,3})?\\].*");
 
-    private static String readLyrics(File mp3) {
+    private static String readSidecar(File mp3, String ext) {
         String mp3Name = mp3.getName();
-        String txtName = mp3Name.substring(0, mp3Name.length() - 4) + ".txt";
-        File txt = new File(mp3.getParentFile(), txtName);
+        String sideName = mp3Name.substring(0, mp3Name.length() - 4) + ext;
+        File side = new File(mp3.getParentFile(), sideName);
 
-        if (!txt.isFile()) {
+        if (!side.isFile()) {
             return null;
         }
+
         try {
-            String text = Files.readString(txt.toPath(), StandardCharsets.UTF_8);
+            String text = Files.readString(side.toPath(), StandardCharsets.UTF_8);
+
             if (text.startsWith("\uFEFF")) {
                 text = text.substring(1);
             }
             text = text.replace("\r\n", "\n").trim();
+
             if (text.isEmpty()) {
                 return null;
             }
-            // TODO 6: if it is longer than MAX_LYRICS_BYTES in UTF-8 bytes,
-            if (text.getBytes(StandardCharsets.UTF_8).length>MAX_LYRICS_BYTES){
-                System.out.println("WARNING: " + txtName + " is " + text.getBytes(StandardCharsets.UTF_8).length
+
+            int bytes = text.getBytes(StandardCharsets.UTF_8).length;
+            if (bytes > MAX_LYRICS_BYTES) {
+                System.out.println("WARNING: " + sideName + " is " + bytes
                         + " bytes, close to the TEXT column limit (65535).");
             }
             return text;
         } catch (IOException e) {
-            System.out.println("WARNING: could not read " + txtName + " (" + e.getMessage()
-                    + "). Storing no lyrics for this track.");
+            System.out.println("WARNING: could not read " + sideName + " (" + e.getMessage()
+                    + "). Storing nothing for this file.");
             return null;
         }
+    }
+    private static String readLyrics(File mp3) {
+        return readSidecar(mp3, ".txt");
+    }
+    private static String readLrc(File mp3) {
+        String text = readSidecar(mp3, ".lrc");
+        if (text == null) {
+            return null;
+        }
+
+        int valid = 0;
+        int skipped = 0;
+        for (String line : text.split("\n")) {
+            String l = line.trim();
+            if (l.isEmpty()) {
+                continue;
+            }
+            if (LRC_LINE.matcher(l).matches()) {
+                valid++;
+            } else {
+                skipped++;
+            }
+        }
+
+        if (valid == 0) {
+            System.out.println("WARNING: " + mp3.getName().replace(".mp3", ".lrc")
+                    + " has no [mm:ss] lines. It is probably plain text. Storing nothing.");
+            return null;
+        }
+        if (skipped > 0) {
+            System.out.println("NOTE: " + skipped + " line(s) in the .lrc do not look like"
+                    + " [mm:ss]text. They are stored, and the page will skip them.");
+        }
+        return text;
     }
 }

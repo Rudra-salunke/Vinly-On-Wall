@@ -45,7 +45,6 @@
     --shadow-panel:     var(--bevel-light), var(--bevel-dark), var(--drop-raised);
     --shadow-button:    var(--bevel-light), var(--bevel-dark), var(--drop-high);
     --shadow-card:      var(--bevel-light), var(--bevel-dark), var(--drop-high);
-    --shadow-record:    var(--drop-highest);
     --shadow-pressed:   var(--sunk);
 
     /* text */
@@ -53,7 +52,9 @@
     --glow-highlight:   0 0 12px rgba(208, 70, 82, 0.45);
 
     /* sizes */
-    --record-size:      min(42vw, 520px);
+    --shadow-record:    4px 6px 12px rgba(0, 0, 0, 0.55), 10px 16px 30px rgba(0, 0, 0, 0.35);
+
+    --record-size:      min(42vw, calc(100vh - 390px), 560px);
 }
 
 /* ---------- 2. Base ---------- */
@@ -94,7 +95,7 @@ body {
     width: var(--record-size);
     aspect-ratio: 1;
     margin-inline: auto;
-    margin-top: calc(var(--record-size) * -0.4);
+    margin-top: 0;
     border-radius: var(--radius-round);
     box-shadow: var(--shadow-record);
 }
@@ -121,7 +122,7 @@ body {
     width: 100%;
     height: 100%;
     border-radius: var(--radius-round);
-    border: 14px solid var(--rim);
+    border: 13px solid var(--rim);
     background: repeating-radial-gradient(
             circle at center,
             var(--vinyl) 0,
@@ -337,15 +338,58 @@ body {
 }
 
 .lyrics-box {
-    flex: 1;
-    min-height: 28vh;
+    flex: none;
+    height: 11rem;
     padding: 16px;
     border-radius: var(--radius-md);
     background: var(--sunken);
     box-shadow: var(--sunk);
     color: var(--text-dim);
     overflow-y: auto;
+    white-space: pre-wrap;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-dark) var(--sunken);
 }
+#lyricsBox.synced {
+    position: relative;
+    overflow: hidden;
+}
+
+#lyricsBox.synced .lyric-line {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-35%);
+    text-align: center;
+    font-size: 2.4rem;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+#lyricsBox.synced .lyric-line.active {
+    opacity: 1;
+    transform: translateY(-50%);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+#lyricsBox.synced .lyric-line:empty::before {
+    content: "...";
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+}
+
+.lyrics-box.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-style: italic;
+    opacity: 0.6;
+}
+
 
 .album-card {
     position: relative;
@@ -472,11 +516,12 @@ body {
         display: contents;
     }
 
-    .record-wrap {
-        margin-top: calc(var(--record-size) * -0.25);
-    }
 
-    .record-wrap    { order: 1; }
+
+    .record-wrap {
+        order: 1;
+        margin-top: 0;
+    }
     .now-playing    { order: 2; }
     .seek           { order: 3; }
     .controls       { order: 4; }
@@ -484,7 +529,17 @@ body {
         order: 7;
         display: block;
     }
-    .lyrics-box     { order: 5; }
+    .record-wrap {
+        margin-top: 0;
+    }
+
+    .lyrics-box {
+        height: 9rem;
+    }
+
+    #lyricsBox.synced .lyric-line {
+        font-size: 1.15rem;
+    }
     .album-card     { order: 6; }
 
     .tracklist-box {

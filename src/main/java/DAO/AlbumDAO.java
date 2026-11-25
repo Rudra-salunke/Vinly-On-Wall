@@ -30,7 +30,7 @@ public class AlbumDAO {
     }
 
     public List<Track> getTracks(int albumId) throws SQLException, ClassNotFoundException {
-        String sql = "SELECT id, album_id, track_number, title, audio_type FROM tracks WHERE album_id = ? ORDER BY track_number";
+        String sql = "SELECT id, album_id, track_number, title, audio_type, lyrics, lyrics_lrc FROM tracks WHERE album_id = ? ORDER BY track_number";
         List<Track> tracks = new ArrayList<>();
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -43,7 +43,10 @@ public class AlbumDAO {
                             rs.getInt("album_id"),
                             rs.getInt("track_number"),
                             rs.getString("title"),
-                            rs.getString("audio_type")
+                            rs.getString("audio_type"),
+                            null,
+                            rs.getString("lyrics"),
+                            rs.getString("lyrics_lrc")
                     );
                     tracks.add(t);
                 }

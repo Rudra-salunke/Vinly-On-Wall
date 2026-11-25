@@ -7,6 +7,7 @@ const items      = document.querySelectorAll("#tracklist li");
 const record = document.querySelector(".record");
 const tracklist = document.getElementById('tracklist');
 const token = tracklist.dataset.token;
+const lyricsBox = document.getElementById("lyricsBox");
 
 // ---------- 2. Build the queue from the <li> items ----------
 // Each entry: { id: "5", title: "Dogs" }
@@ -16,20 +17,18 @@ const queue = Array.from(items).map(li => ({
 }));
 
 let currentIndex = 0;
+let lrcLines = [];
+let lrcEls = [];
+let activeLine = -1;
 
 // ---------- 3. Load a track (does NOT start playing) ----------
 function loadTrack(i) {
     currentIndex = i;
     audio.src = 'audio?id=' + queue[i].id + '&token=' + encodeURIComponent(token);
     nowPlaying.textContent = queue[i].title;
-    items.forEach((li, index) => {
-        li.addEventListener("click", () => {
-            loadTrack(index);
-            audio.play().catch(() => {});
-        });
-    });
+    showLyrics(queue[i].id);
+    items.forEach((li, idx) => li.classList.toggle("active", idx === i));
 }
-
 // ---------- 4. Play and pause ----------
 function togglePlay() {
     if (audio.paused){
@@ -67,6 +66,8 @@ prevBtn.addEventListener("click", playPrev);
 // ---------- 9. Tap a track in the list ----------
 items.forEach((li, index) => {
     li.addEventListener("click", () => {
+        loadTrack(index);
+        audio.play().catch(() => {});
     });
 });
 
@@ -137,3 +138,82 @@ seekBar.addEventListener("change", () => {
 seekBar.addEventListener("pointerup", () => {
     setTimeout(() => { dragging = false; }, 50);
 });
+
+// ---------- 11. LRC syncing: syncing lyrics in lyrics box ----------
+
+function parseLrc(lrcText) {
+    const result = [];
+    const lines =lrcText.split(/\r?\n/);
+    const lineRegex =/^\[(\d+):(\d{2})(?:\.(\d+))?\](.*)$/;
+
+    for (const rawLine of lines) {
+        const match = lineRegex.exec(rawLine.trim());
+
+        if (!match) {
+            continue;
+        }
+        const minutes =  Number(match[1]);
+        const seconds = Number(match[2]);
+        let fraction = 0;
+        if (match[3] !== undefined) {
+            fraction = Number(match[3]) / Math.pow(10, match[3].length);
+        }
+        const time = minutes * 60 + seconds + fraction;
+        const text = match[4].trim();
+
+        result.push({ time: time, text: text });
+    }
+    result.sort((a, b) => a.time - b.time);
+    return result;
+}
+function showLyrics(trackId) {
+    lrcLines = [];
+    lrcEls = [];
+    activeLine = -1;
+    const source = document.getElementById("lyrics-" + trackId);
+    const lrcSource = document.getElementById("lrc-" + trackId);
+    const text = source ? source.textContent.trim() : "";
+    const parsed = parseLrc(lrcSource ? lrcSource.textContent.trim() : "");
+    lyricsBox.scrollTop = 0;
+    if (parsed.length === 0) {
+        lyricsBox.classList.remove("synced");
+        lyricsBox.textContent = text || "No lyrics for this track";
+        lyricsBox.classList.toggle("empty", !text);
+        return;
+    }
+    if (parsed.length > 0 && parsed[0].time > 0) {
+        parsed.unshift({ time: 0, text: "" });
+    }
+    lrcLines = parsed;
+    lyricsBox.textContent = "";
+    lyricsBox.classList.add("synced");
+    lyricsBox.classList.remove("empty");
+    for (const entry of lrcLines) {
+        const lineDiv = document.createElement("div");
+        lineDiv.className = "lyric-line";
+        lineDiv.textContent = entry.text;
+        lyricsBox.appendChild(lineDiv);
+        lrcEls.push(lineDiv);
+    }
+}
+function updateLyrics() {
+    if (lrcLines.length === 0) return;
+
+    let idx = -1;
+    for (let i = 0; i < lrcLines.length; i++) {
+        if (lrcLines[i].time <= audio.currentTime) {
+            idx = i;
+        } else {
+            break; // the array is sorted, so no later line can match
+        }
+    }
+
+    if (idx === activeLine) return;
+
+    if (activeLine >= 0) lrcEls[activeLine].classList.remove("active");
+    if (idx >= 0) lrcEls[idx].classList.add("active");
+    activeLine = idx;
+}
+
+audio.addEventListener("timeupdate", updateLyrics);
+audio.addEventListener("seeked", updateLyrics);
