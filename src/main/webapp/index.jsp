@@ -85,6 +85,7 @@
       <ul id="tracklist" class="track-list ${gridClass}" data-token="<c:out value='${token}'/>">
         <c:forEach var="t" items="${tracks}">
           <li data-id="${t.id}" data-title="<c:out value='${t.title}'/>">
+            <c:if test="${not empty t.durationSeconds}"><span class="dur" data-seconds="${t.durationSeconds}"></span></c:if>
             <c:out value="${t.trackNumber}"/>. <c:out value="${t.title}"/>
           </li>
         </c:forEach>

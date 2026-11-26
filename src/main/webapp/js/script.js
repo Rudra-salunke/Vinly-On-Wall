@@ -142,6 +142,9 @@ function fmt(sec) {
     const s = Math.floor(sec % 60);
     return m + ":" + String(s).padStart(2, "0");
 }
+document.querySelectorAll(".dur").forEach(el => {
+    el.textContent = fmt(Number(el.dataset.seconds));
+});
 
 
 function showProgress(p) {

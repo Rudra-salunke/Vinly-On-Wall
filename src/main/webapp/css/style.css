@@ -472,6 +472,8 @@ body {
 #tracklist li {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap:12px;
     break-inside: avoid;
     padding: 0 16px;
     margin-bottom: 5px;
@@ -482,6 +484,15 @@ body {
     line-height: 1.2;
     cursor: pointer;
     transition: filter 0.15s;
+}
+.dur{
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+#tracklist li.active .dur{
+    color: var(--text);
 }
 .cols-1 { column-count: 1; }
 .cols-2 { column-count: 2; }

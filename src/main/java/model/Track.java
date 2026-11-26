@@ -9,7 +9,8 @@ public class Track {
     private byte[] audioData;
     private String lyrics;
     private String lyricsLrc;
-    public Track(int id,int albumId,int trackNumber,String title,String audioType,byte[] audioData,String lyrics,String lyricsLrc){
+    private Integer durationSeconds;
+    public Track(int id,int albumId,int trackNumber,String title,String audioType,byte[] audioData,String lyrics,String lyricsLrc,Integer durationSeconds){
         this.id=id;
         this.albumId=albumId;
         this.trackNumber=trackNumber;
@@ -18,13 +19,14 @@ public class Track {
         this.audioData=audioData;
         this.lyrics=lyrics;
         this.lyricsLrc=lyricsLrc;
+        this.durationSeconds=durationSeconds;
     }
     public Track(int id, int albumId, int trackNumber, String title, String audioType, byte[] audioData) {
-        this(id, albumId, trackNumber, title, audioType, audioData, null,null);
+        this(id, albumId, trackNumber, title, audioType, audioData, null,null,null);
     }
 
     public Track(int id, int albumId, int trackNumber, String title, String audioType) {
-        this(id, albumId, trackNumber, title, audioType, null, null,null);
+        this(id, albumId, trackNumber, title, audioType, null, null,null,null);
     }
 
     public int getId() {
@@ -81,6 +83,13 @@ public class Track {
 
     public String getLyricsLrc() {
         return lyricsLrc;
+    }
+    public Integer getDurationSeconds() {
+        return durationSeconds;
+    }
+
+    public void setDurationSeconds(Integer durationSeconds) {
+        this.durationSeconds = durationSeconds;
     }
 }
 

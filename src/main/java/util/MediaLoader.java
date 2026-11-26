@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.regex.Pattern;
+import org.jaudiotagger.audio.AudioFileIO;
+import org.jaudiotagger.audio.AudioFile;
 
 public class MediaLoader {
 
@@ -18,8 +20,11 @@ public class MediaLoader {
     private static final String ALBUM_TITLE  = "Animals";
     private static final String ALBUM_ARTIST = "Pink Floyd";
     private static final int    ALBUM_YEAR   = 1977;
+    private static final java.util.logging.Logger TAG_LOGGER =
+            java.util.logging.Logger.getLogger("org.jaudiotagger");
 
     public static void main(String[] args) throws Exception {
+        TAG_LOGGER.setLevel(java.util.logging.Level.OFF);
         File folder = new File(MEDIA_FOLDER);
         if (!folder.isDirectory()) {
             System.out.println("Folder not found: " + MEDIA_FOLDER);
@@ -114,6 +119,16 @@ public class MediaLoader {
         }
     }
 
+    private static Integer readDurationSeconds(File mp3) {
+        try {
+            AudioFile audioFile = AudioFileIO.read(mp3);
+            return audioFile.getAudioHeader().getTrackLength();
+        } catch (Exception e) {
+            System.out.println("WARNING: could not read duration of " + mp3.getName());
+            return null;
+        }
+    }
+
     private static void insertTrack(Connection con, File mp3) throws Exception {
         String name = mp3.getName();
         name = name.substring(0, name.length() - 4); // drop ".mp3"
@@ -128,10 +143,11 @@ public class MediaLoader {
         String title = name.substring(dash + 1).trim();
         String lyrics = readLyrics(mp3);
         String lrc = readLrc(mp3);
+        Integer duration = readDurationSeconds(mp3);
 
         String sql = "INSERT INTO tracks "
-                + "(album_id, track_number, title, audio_type, audio_data, lyrics, lyrics_lrc) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                + "(album_id, track_number, title, audio_type, audio_data, lyrics, lyrics_lrc, duration_seconds) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(sql);
              InputStream in = new FileInputStream(mp3)) {
 
@@ -149,6 +165,11 @@ public class MediaLoader {
                 ps.setString(7, lrc);
             } else {
                 ps.setNull(7, Types.LONGVARCHAR);
+            }
+            if (duration != null) {
+                ps.setInt(8, duration);
+            } else {
+                ps.setNull(8, Types.INTEGER);
             }
             ps.executeUpdate();
 
