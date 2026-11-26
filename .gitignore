@@ -40,7 +40,6 @@ out/
 config.properties
 db.properties
 samples/
-database_album_track/
 
 # OS junk
 .DS_Store
