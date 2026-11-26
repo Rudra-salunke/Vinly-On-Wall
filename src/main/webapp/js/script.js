@@ -8,6 +8,7 @@ const record = document.querySelector(".record");
 const tracklist = document.getElementById('tracklist');
 const token = tracklist.dataset.token;
 const lyricsBox = document.getElementById("lyricsBox");
+const preloader = new Audio();
 
 // ---------- 2. Build the queue from the <li> items ----------
 // Each entry: { id: "5", title: "Dogs" }
@@ -15,20 +16,35 @@ const queue = Array.from(items).map(li => ({
     id: li.dataset.id,
     title: li.dataset.title
 }));
-
+let wakeLock = null;
 let currentIndex = 0;
 let lrcLines = [];
 let lrcEls = [];
 let activeLine = -1;
+let preloadedIndex = -1;
 
 // ---------- 3. Load a track (does NOT start playing) ----------
 function loadTrack(i) {
     currentIndex = i;
+    preloadedIndex=-1;
     audio.src = 'audio?id=' + queue[i].id + '&token=' + encodeURIComponent(token);
     nowPlaying.textContent = queue[i].title;
     setMediaMetadata(queue[i].title);
     showLyrics(queue[i].id);
     items.forEach((li, idx) => li.classList.toggle("active", idx === i));
+}
+
+function preloadNext(){
+    if (!queue.length) return;
+
+    const nextIndex =(currentIndex+1)%queue.length;
+    if(preloadedIndex===nextIndex){
+        return;
+    }
+    const url = 'audio?id=' + queue[nextIndex].id + '&token=' + encodeURIComponent(token);
+    preloader.preload = "auto";
+    preloader.src = url;
+    preloadedIndex=nextIndex;
 }
 
 function setMediaMetadata(title) {
@@ -70,20 +86,21 @@ function playPrev() {
 audio.addEventListener("play", () => {
     playBtn.textContent = "Pause";
     record.classList.add("playing");
-    // TODO: if mediaSession exists, set playbackState to "playing"
     if("mediaSession" in navigator){
         navigator.mediaSession.playbackState = "playing";
     }
+    requestWakeLock();
 });
 
 audio.addEventListener("pause", () => {
     playBtn.textContent = "Play";
     record.classList.remove("playing");
-    // TODO: if mediaSession exists, set playbackState to "paused"
     if("mediaSession" in navigator){
         navigator.mediaSession.playbackState = "paused";
     }
+    releaseWakeLock();
 });
+
 
 // ---------- 7. Auto-advance when a song ends ----------
 audio.addEventListener("ended", playNext);
@@ -139,6 +156,9 @@ audio.addEventListener("timeupdate", () => {
     if (dragging || !isFinite(audio.duration) || audio.duration === 0) return;
     showProgress(audio.currentTime / audio.duration);
     timeNow.textContent = fmt(audio.currentTime);
+    if (isFinite(audio.duration) && audio.duration - audio.currentTime < 20){
+        preloadNext();
+    }
 });
 
 
@@ -253,3 +273,29 @@ function updateLyrics() {
 
 audio.addEventListener("timeupdate", updateLyrics);
 audio.addEventListener("seeked", updateLyrics);
+
+// ---------- 12. Wake Lock ----------
+
+function requestWakeLock() {
+    if (!("wakeLock" in navigator) || wakeLock) return;
+
+    navigator.wakeLock
+        .request("screen")
+        .then((sentinel) => {
+            wakeLock = sentinel;
+            wakeLock.addEventListener("release", () => {
+                wakeLock = null;
+            });
+        })
+        .catch(() => {});
+}
+
+function releaseWakeLock() {
+    if (!wakeLock) return;
+
+    wakeLock.release().catch(() => {});
+    wakeLock = null;
+}
+if (document.visibilityState ==="visible" && !audio.paused){
+    requestWakeLock();
+}
