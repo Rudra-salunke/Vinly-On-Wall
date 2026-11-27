@@ -101,6 +101,66 @@ body {
     animation: shadow-settle 0.8s ease-out;
 }
 
+.stage {
+    position: relative;
+    overflow-x: clip;
+}
+
+.notes-toggle {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 6;
+    min-height: 36px;
+    padding: 0 14px;
+    border: none;
+    border-radius: var(--radius-lg);
+    background: var(--grad-brass);
+    box-shadow: var(--shadow-button);
+    color: var(--bg);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.notes-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    padding: 52px 20px 16px;
+    border-radius: var(--radius-md);
+    background: var(--grad-panel);
+    box-shadow: var(--shadow-panel);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-dark) var(--sunken);
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 0.5s ease, visibility 0s linear 0.5s;
+}
+
+.notes-panel.open {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.5s ease, visibility 0s;
+}
+
+.notes-panel h2 {
+    margin: 0 0 10px;
+    font-size: 1.1rem;
+    color: var(--accent-light);
+    text-shadow: var(--text-engrave);
+}
+
+.notes-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
 .record-wrap::after {
     content: "";
     position: absolute;
@@ -539,10 +599,7 @@ body {
 
 
 
-    .record-wrap {
-        order: 1;
-        margin-top: 0;
-    }
+    .stage { order: 1; }
     .now-playing    { order: 2; }
     .seek           { order: 3; }
     .controls       { order: 4; }

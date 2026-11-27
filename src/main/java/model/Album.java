@@ -7,13 +7,15 @@ public class Album {
     private int releaseYear;
     private String coverType;
     private byte[] coverData;
-    public Album(int id, String title, String artist, int releaseYear, String coverType, byte[] coverData){
+    private String description;
+    public Album(int id, String title, String artist, int releaseYear, String coverType, byte[] coverData,String description){
         this.id=id;
         this.title=title;
         this.artist=artist;
         this.releaseYear = releaseYear;
         this.coverType=coverType;
         this.coverData=coverData;
+        this.description=description;
     }
 
     public int getId() {
@@ -68,4 +70,6 @@ public class Album {
         if (coverData == null) return null;
         return java.util.Base64.getEncoder().encodeToString(coverData);
     }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

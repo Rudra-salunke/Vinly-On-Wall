@@ -14,14 +14,16 @@ import java.util.List;
 
 public class AlbumDAO {
     public Album getAlbum(int id) throws SQLException, ClassNotFoundException {
-        String sql = "SELECT id, title, artist, release_year, cover_type, cover_data FROM albums WHERE id = ?";
+        String sql = "SELECT id, title, artist, release_year, cover_type, cover_data,description FROM albums WHERE id = ?";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
         ) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new Album(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5), rs.getBytes(6));
+                    return new Album(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5), rs.getBytes(6),rs.getString(7));
+
+
                 } else {
                     return null;
                 }
@@ -83,14 +85,14 @@ public class AlbumDAO {
     }
 
     public Album getAlbumByToken(String token) throws SQLException, ClassNotFoundException {
-        String sql = "SELECT id, title, artist, release_year, cover_type, cover_data FROM albums WHERE token = ?";
+        String sql = "SELECT id, title, artist, release_year, cover_type, cover_data,description FROM albums WHERE token = ?";
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
         ) {
             ps.setString(1, token);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new Album(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5), rs.getBytes(6));
+                    return new Album(rs.getInt(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5), rs.getBytes(6),rs.getString(7));
                 } else {
                     return null;
                 }

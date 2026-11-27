@@ -302,3 +302,21 @@ function releaseWakeLock() {
 if (document.visibilityState ==="visible" && !audio.paused){
     requestWakeLock();
 }
+// ---------- 13. Liner notes panel ----------
+const notesToggle = document.getElementById("notesToggle");
+const notesPanel  = document.getElementById("notesPanel");
+
+function setNotes(open) {
+    notesPanel.classList.toggle("open", open);
+    notesToggle.setAttribute("aria-expanded", String(open));
+    notesToggle.textContent = open ? "Close" : "Liner notes";
+}
+
+if (notesToggle && notesPanel) {
+    notesToggle.addEventListener("click", () => {
+        setNotes(!notesPanel.classList.contains("open"));
+    });
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") setNotes(false);
+    });
+}

@@ -14,7 +14,7 @@ import org.jaudiotagger.audio.AudioFile;
 
 public class MediaLoader {
 
-    // ===== EDIT THESE =====
+    // ----- EDIT THESE -----
     private static final String MEDIA_FOLDER = "C:\\vinyl-media\\animals";
     private static final int    ALBUM_ID     = 1;
     private static final String ALBUM_TITLE  = "Animals";
@@ -44,7 +44,8 @@ public class MediaLoader {
             con.setAutoCommit(false);
 
             try {
-                saveAlbum(con, cover);
+                String description = readFolderText(folder, "description.txt");
+                saveAlbum(con, cover, description);
                 deleteOldTracks(con);
 
                 for (File mp3 : mp3s) {
@@ -72,7 +73,7 @@ public class MediaLoader {
         return null;
     }
 
-    private static void saveAlbum(Connection con, File cover) throws Exception {
+    private static void saveAlbum(Connection con, File cover,String description) throws Exception {
         byte[] coverBytes = null;
         String coverType = null;
 
@@ -82,22 +83,23 @@ public class MediaLoader {
         }
 
         String update = "UPDATE albums SET title = ?, artist = ?, release_year = ?, "
-                + "cover_type = ?, cover_data = ? WHERE id = ?";
+                + "cover_type = ?, cover_data = ?, description = ? WHERE id = ?";
         try (PreparedStatement ps = con.prepareStatement(update)) {
             ps.setString(1, ALBUM_TITLE);
             ps.setString(2, ALBUM_ARTIST);
             ps.setInt(3, ALBUM_YEAR);
             ps.setString(4, coverType);
             ps.setBytes(5, coverBytes);
-            ps.setInt(6, ALBUM_ID);
-
+            if (description != null) ps.setString(6, description);
+            else ps.setNull(6, Types.LONGVARCHAR);
+            ps.setInt(7, ALBUM_ID);
             if (ps.executeUpdate() > 0) {
                 System.out.println("Updated album " + ALBUM_ID + ": " + ALBUM_TITLE);
                 return;
             }
         }
-        String insert = "INSERT INTO albums (id, title, artist, release_year, cover_type, cover_data,token) "
-                + "VALUES (?, ?, ?, ?, ?, ?,?)";
+        String insert = "INSERT INTO albums (id, title, artist, release_year, cover_type, cover_data, token, description) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = con.prepareStatement(insert)) {
             ps.setInt(1, ALBUM_ID);
             ps.setString(2, ALBUM_TITLE);
@@ -106,6 +108,8 @@ public class MediaLoader {
             ps.setString(5, coverType);
             ps.setBytes(6, coverBytes);
             ps.setString(7,TokenGenerator.generateToken());
+            if (description != null) ps.setString(8, description);
+            else ps.setNull(8, Types.LONGVARCHAR);
             ps.executeUpdate();
             System.out.println("Created album " + ALBUM_ID + ": " + ALBUM_TITLE);
         }
@@ -230,6 +234,19 @@ public class MediaLoader {
         } catch (IOException e) {
             System.out.println("WARNING: could not read " + sideName + " (" + e.getMessage()
                     + "). Storing nothing for this file.");
+            return null;
+        }
+    }
+    private static String readFolderText(File folder, String fileName) {
+        File f = new File(folder, fileName);
+        if (!f.isFile()) return null;
+        try {
+            String text = Files.readString(f.toPath(), StandardCharsets.UTF_8);
+            if (text.startsWith("\uFEFF")) text = text.substring(1);
+            text = text.replace("\r\n", "\n").trim();
+            return text.isEmpty() ? null : text;
+        } catch (IOException e) {
+            System.out.println("WARNING: could not read " + fileName + " (" + e.getMessage() + ")");
             return null;
         }
     }

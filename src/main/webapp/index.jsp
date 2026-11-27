@@ -30,6 +30,7 @@
   <!-- ******************* LEFT COLUMN ******************* -->
   <div class="left">
 
+  <div class="stage">
     <div class="record-wrap">
       <div class="record">
         <div class="record-label"></div>
@@ -40,7 +41,15 @@
         </div>
       </div>
     </div>
-
+    <c:if test="${not empty album.description}">
+        <button type="button" id="notesToggle" class="notes-toggle"
+                aria-expanded="false" aria-controls="notesPanel">Liner notes</button>
+        <aside id="notesPanel" class="notes-panel" aria-label="Liner notes">
+          <h2>Liner notes</h2>
+          <div class="notes-text"><c:out value="${album.description}"/></div>
+        </aside>
+      </c:if>
+    </div>
     <div class="now-playing">
       Now playing: <span id="nowPlaying"></span>
     </div>
