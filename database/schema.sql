@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 26, 2026 at 11:49 AM
+-- Generation Time: Nov 27, 2026 at 06:00 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -34,7 +34,8 @@ CREATE TABLE `albums` (
   `release_year` smallint(6) DEFAULT NULL,
   `cover_type` varchar(50) DEFAULT NULL,
   `cover_data` longblob DEFAULT NULL,
-  `token` varchar(32) NOT NULL
+  `token` varchar(32) NOT NULL,
+  `description` mediumtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
